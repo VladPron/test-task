@@ -1,0 +1,66 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum HairdresserSpec {
+  male
+  female
+  weddings
+}
+
+model User {
+  id                       String                 @id @default(uuid())
+  phone                    String                 @unique @db.VarChar(255)
+  email                    String                 @unique @db.VarChar(255)
+  name                     String                 @db.VarChar(255)
+  password                 String?                @db.VarChar(255)
+  role                     Role                   @default(USER)
+  Hairdressers             Hairdresser?
+  AppointmentToHairdresser HairdresserTimeSlots[]
+  createdAt                DateTime               @default(now())
+  updatedAt                DateTime               @updatedAt
+
+  @@index([id, email], type: BTree)
+  @@map("users")
+}
+
+model Hairdresser {
+  id                   String                 @id @default(uuid())
+  spec                 HairdresserSpec
+  user                 User                   @relation(fields: [userId], references: [id])
+  userId               String                 @unique
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  HairdresserTimeSlots HairdresserTimeSlots[]
+
+  @@index([id, userId], type: BTree)
+  @@map("hairdressers")
+}
+
+model HairdresserTimeSlots {
+  id            String      @id @default(uuid())
+  hairdrasser   Hairdresser @relation(fields: [hairdresserId], references: [id])
+  hairdresserId String
+  timeSlotStart DateTime    @db.Timestamptz()
+  timeSlotEnd   DateTime    @db.Timestamptz()
+  user          User?       @relation(fields: [userId], references: [id])
+  userId        String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([hairdresserId], type: Hash)
+  @@map("hairdresserTimeSlots")
+}
